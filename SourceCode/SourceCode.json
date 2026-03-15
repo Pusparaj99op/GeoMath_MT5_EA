@@ -1,0 +1,536 @@
+{
+    "prompt_id": "ANTIGRAVITY_XAUUSD_GEO_EA_V1",
+    "target_platform": "MetaTrader 5",
+    "language": "MQL5",
+    "instrument": {
+        "symbol": "GOLD.i#",
+        "alias": "XAUUSD",
+        "asset_class": "Spot Commodity — CFD",
+        "pip_value_note": "1 point = 0.01 USD per 0.01 lot; confirm broker tick_size at runtime"
+    },
+    "ea_identity": {
+        "name": "AntigravityGeoScalper",
+        "version": "1.0.0",
+        "style": "Scalper",
+        "philosophy": "Every entry, exit, stop-loss and take-profit level must be derived exclusively from geometric and mathematical constructs. No lagging indicator is permitted. Price action is treated as a geometric object moving through a two-dimensional Cartesian space where the X-axis is time (bar index) and the Y-axis is price.",
+        "constraint": "ZERO use of RSI, MACD, MA crossovers, Bollinger Bands, or any convolution-based indicator. Only pure coordinate geometry, ratio algebra, angular mathematics, fractal recursion, and vector calculus are allowed."
+    },
+    "timeframes": {
+        "higher_context": [
+            "H4",
+            "H1"
+        ],
+        "execution": [
+            "M15",
+            "M5"
+        ],
+        "scalp_trigger": [
+            "M1"
+        ],
+        "strategy": "Top-down confluence. H4/H1 defines geometric structure. M15/M5 refines harmonic zone. M1 fires entry on candlestick geometry confirmation."
+    },
+    "account_module": {
+        "description": "Retrieve and expose all key account metrics at OnInit() and refresh at each OnTick()",
+        "fields_required": [
+            "AccountInfoDouble(ACCOUNT_BALANCE)",
+            "AccountInfoDouble(ACCOUNT_EQUITY)",
+            "AccountInfoDouble(ACCOUNT_MARGIN)",
+            "AccountInfoDouble(ACCOUNT_FREE_MARGIN)",
+            "AccountInfoDouble(ACCOUNT_MARGIN_LEVEL)",
+            "AccountInfoInteger(ACCOUNT_LEVERAGE)",
+            "AccountInfoString(ACCOUNT_CURRENCY)",
+            "SymbolInfoInteger(symbol, SYMBOL_SPREAD) — live spread in points",
+            "SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE)",
+            "SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE)",
+            "SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN)",
+            "SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX)",
+            "SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP)"
+        ],
+        "slippage": {
+            "input_param": "int InpMaxSlippage = 20",
+            "unit": "points",
+            "note": "Pass as deviation parameter in OrderSend(). For scalping on XAUUSD, recommended ≤ 30 points."
+        },
+        "lot_sizing": {
+            "method": "Geometric_RiskPercent",
+            "formula": "lot = (AccountBalance * RiskPercent / 100) / (SL_points * TickValue / TickSize)",
+            "input_params": {
+                "InpRiskPercent": 1.0,
+                "InpFixedLot": 0.01,
+                "InpUseDynamicLot": true
+            }
+        }
+    },
+    "geometry_engines": {
+        "1_fibonacci_engine": {
+            "description": "All Fibonacci constructs derive from the golden ratio φ = (1 + √5) / 2 ≈ 1.61803398875",
+            "swing_detection": {
+                "algorithm": "ZigZag via fractal pivot: a swing high is a bar whose high is the maximum over [i-N, i+N] bars; analogous for swing low. N = input parameter (default 5).",
+                "coordinates": "Each swing is a Cartesian point P(bar_index, price)"
+            },
+            "retracement_levels": {
+                "ratios": [
+                    0.236,
+                    0.382,
+                    0.500,
+                    0.618,
+                    0.705,
+                    0.786,
+                    0.886
+                ],
+                "formula": "RetracementPrice = SwingHigh - (SwingHigh - SwingLow) * ratio",
+                "confluence_band_width": "±0.5% of level price"
+            },
+            "extension_levels": {
+                "ratios": [
+                    1.0,
+                    1.272,
+                    1.414,
+                    1.618,
+                    2.0,
+                    2.618,
+                    3.618,
+                    4.236
+                ],
+                "formula": "ExtensionPrice = SwingLow + (SwingHigh - SwingLow) * ratio"
+            },
+            "golden_spiral": {
+                "description": "Project a logarithmic spiral from the last significant pivot. Radius grows by φ per 90° rotation. Convert polar (r, θ) to price-time (price, bar_index) using r = A * e^(b*θ) where b = ln(φ) / (π/2).",
+                "arc_price_targets": "Where spiral intersects horizontal price levels → candidate reversal zones"
+            },
+            "price_clusters": {
+                "description": "Run Fibonacci from multiple swing pairs on all active timeframes. Cluster overlapping levels within tolerance band. Cluster density score = number of overlapping levels."
+            }
+        },
+        "2_harmonic_pattern_engine": {
+            "description": "Harmonic patterns are geometric price formations defined by strict Fibonacci ratio relationships between five XABCD points in Cartesian price-time space.",
+            "coordinate_system": "X(bar, price), A(bar, price), B(bar, price), C(bar, price), D(bar, price)",
+            "pattern_definitions": {
+                "Gartley": {
+                    "AB_retraces_XA": 0.618,
+                    "BC_retraces_AB": [
+                        0.382,
+                        0.886
+                    ],
+                    "CD_retraces_XA": 0.786,
+                    "BC_extension_to_D": [
+                        1.272,
+                        1.618
+                    ]
+                },
+                "Butterfly": {
+                    "AB_retraces_XA": 0.786,
+                    "BC_retraces_AB": [
+                        0.382,
+                        0.886
+                    ],
+                    "CD_retraces_XA": [
+                        1.272,
+                        1.618
+                    ],
+                    "BC_extension_to_D": [
+                        1.618,
+                        2.618
+                    ]
+                },
+                "Bat": {
+                    "AB_retraces_XA": [
+                        0.382,
+                        0.500
+                    ],
+                    "BC_retraces_AB": [
+                        0.382,
+                        0.886
+                    ],
+                    "CD_retraces_XA": 0.886,
+                    "BC_extension_to_D": [
+                        1.618,
+                        2.618
+                    ]
+                },
+                "Crab": {
+                    "AB_retraces_XA": [
+                        0.382,
+                        0.618
+                    ],
+                    "BC_retraces_AB": [
+                        0.382,
+                        0.886
+                    ],
+                    "CD_retraces_XA": 1.618,
+                    "BC_extension_to_D": [
+                        2.240,
+                        3.618
+                    ]
+                },
+                "Shark": {
+                    "AB_retraces_XA": [
+                        0.382,
+                        0.618
+                    ],
+                    "BC_extension_of_XA": [
+                        1.130,
+                        1.618
+                    ],
+                    "CD_retraces_BC": 0.886,
+                    "note": "D lies at 0.886 of XA extension — extreme harmonic"
+                },
+                "Cypher": {
+                    "AB_retraces_XA": [
+                        0.382,
+                        0.618
+                    ],
+                    "BC_extension_of_XA": [
+                        1.130,
+                        1.414
+                    ],
+                    "CD_retraces_XC": 0.786
+                }
+            },
+            "validation": {
+                "ratio_tolerance": 0.05,
+                "minimum_leg_size_points": 150,
+                "Potential_Reversal_Zone": "PRZ = D-point ± cluster of CD projection, BC extension, and XA retracement levels within tolerance",
+                "pattern_quality_score": "Sum of ratio errors for all legs; lower = higher quality. Only trade score < 0.15."
+            },
+            "signal": "Bullish harmonic → long at D when price enters PRZ from above. Bearish harmonic → short at D when price enters PRZ from below."
+        },
+        "3_gann_engine": {
+            "description": "W.D. Gann's geometric theory: time and price are equivalent dimensions. The most important geometric line is the 1×1 (45°) angle from a significant pivot.",
+            "gann_angles": {
+                "angles_degrees": [
+                    82.5,
+                    75.0,
+                    71.25,
+                    63.75,
+                    45.0,
+                    26.25,
+                    18.75,
+                    15.0,
+                    7.5
+                ],
+                "ratios": [
+                    "8x1",
+                    "4x1",
+                    "3x1",
+                    "2x1",
+                    "1x1",
+                    "1x2",
+                    "1x3",
+                    "1x4",
+                    "1x8"
+                ],
+                "formula": "Price at bar N from pivot = PivotPrice + (N * GannUnit * tan(angle_rad))",
+                "GannUnit": "One time unit = one bar. Price unit calibrated so that 45° angle slope = AverageBarRange / 1 bar."
+            },
+            "gann_square": {
+                "square_of_9": {
+                    "description": "Spiral-based price calculator. Numbers spiral outward from center. Cardinal cross and diagonal cross angles (45°, 90°, 135°, 180°, 270°, 360°) mark support/resistance.",
+                    "formula": "Target = (√Price + N * 0.25)² where N is the number of 90° cardinal steps",
+                    "apply_to": "Current XAUUSD price — generate 8 angular targets above and below"
+                },
+                "square_of_range": {
+                    "description": "Square the price range of the current swing. Side of the square in price = Side in time.",
+                    "formula": "range = SwingHigh - SwingLow; time_projection_bars = round(range / PointValue)"
+                }
+            },
+            "gann_fan": {
+                "pivot_type": "Last confirmed swing high or swing low on M15/H1",
+                "lines": "Draw all 9 Gann angle lines from pivot. Price sitting above 1x1 = bullish. Price sitting below 1x1 = bearish.",
+                "break_signal": "Price crossing through an angle line = momentum shift; trade direction of the break."
+            },
+            "time_cycles": {
+                "primary_cycles_bars": [
+                    144,
+                    233,
+                    377,
+                    610
+                ],
+                "note": "These are Fibonacci-number bar counts. Project forward from last significant pivot. Cycle completion bar = candidate reversal.",
+                "geometric_time_cluster": "When 2+ cycle projections converge within ±3 bars = high-probability time node"
+            }
+        },
+        "4_vector_momentum_engine": {
+            "description": "Model each price leg as a 2D vector V = (Δtime, ΔPrice). Apply vector algebra to measure momentum, compare legs, and project targets.",
+            "vector_construction": {
+                "V_current": "Vector from last confirmed pivot to current price",
+                "V_previous": "Vector of the preceding same-direction leg",
+                "magnitude": "|V| = √( (Δbar)² + (ΔPrice / PointValue)² )",
+                "angle": "θ = atan2(ΔPrice / PointValue, Δbar) in degrees"
+            },
+            "momentum_signals": {
+                "velocity_ratio": "If |V_current| / |V_previous| > 1.618 → acceleration (φ-based threshold)",
+                "angle_comparison": "If θ_current > θ_previous → steeper move = strengthening; else weakening",
+                "dot_product": "V_current · V_previous; if positive = trend continuation; if negative = reversal pressure"
+            },
+            "pythagorean_projection": {
+                "description": "Use the Pythagorean theorem in price-time space to project where the current vector leg will terminate.",
+                "formula": "Projected_ΔPrice = √( TargetMagnitude² - Δbar_to_target² ) * PointValue",
+                "target_magnitude_source": "Equal to 0.618 × or 1.618 × of previous leg magnitude"
+            },
+            "linear_regression_channel": {
+                "description": "Fit a least-squares line through last N bars. Channel = ±1σ and ±2σ bands.",
+                "formula": "y = mx + b; m = (n·Σxy − Σx·Σy) / (n·Σx² − (Σx)²); b = (Σy − m·Σx) / n",
+                "signal": "Price at +2σ with bearish candle geometry → short scalp. Price at −2σ with bullish candle geometry → long scalp.",
+                "N_bars_input": "int InpLRBars = 50"
+            },
+            "standard_deviation_channel": {
+                "σ1_weight": 0.68,
+                "σ2_weight": 0.95,
+                "σ3_weight": 0.997
+            }
+        },
+        "5_circle_arc_engine": {
+            "description": "Treat significant price pivots as points on a circle. Use circle geometry to project price targets and time targets.",
+            "radius_formula": "r = distance from selected pivot to current price in (bar, price) normalized space",
+            "arc_projection": "Draw arc of radius r centered on pivot. Where the arc intersects future price levels = geometric target.",
+            "midpoint_perpendicular": {
+                "description": "Perpendicular bisector of any two pivot points. Price approaching this geometric bisector = balanced/indecision zone.",
+                "formula": "Midpoint M = ((x1+x2)/2, (y1+y2)/2); slope of bisector = −(x2−x1)/(y2−y1)"
+            },
+            "inscribed_angle_theorem": "Angle subtended by a chord at the circumference = half of central angle. Use to validate proportion of price moves."
+        },
+        "6_fractal_geometry_engine": {
+            "description": "Markets are self-similar (fractal). The same geometric patterns repeat at different scales.",
+            "fractal_pivot_detection": {
+                "rule": "A fractal high at bar i: High[i] > High[i-1] AND High[i] > High[i-2] AND High[i] > High[i+1] AND High[i] > High[i+2]. Analogous for fractal low.",
+                "mql5_function": "iBands or custom fractal pivot scanner across all active timeframes"
+            },
+            "self_similarity_score": {
+                "description": "Compare the ratio (leg2/leg1) on M5 with the ratio on M15 and H1. If all three timeframe ratios are within 5% of each other = fractal alignment.",
+                "signal_boost": "Fractal alignment on 3 TFs multiplies confluence score by 1.5"
+            },
+            "hausdorff_dimension_proxy": {
+                "description": "Approximate fractal dimension D = log(N) / log(r) where N = number of sub-segments after partitioning a move and r = scaling ratio. D close to 1 = trending; D close to 1.5 = random/choppy.",
+                "trade_filter": "Only trade when D < 1.3 (trending behavior confirmed geometrically)"
+            }
+        }
+    },
+    "candlestick_geometry_module": {
+        "description": "Every candlestick is a geometric object with measurable properties. No Japanese interpretation heuristics — only pure ratio and angle mathematics.",
+        "definitions": {
+            "TotalRange": "High - Low",
+            "BodySize": "| Close - Open |",
+            "UpperWick": "High - Max(Open, Close)",
+            "LowerWick": "Min(Open, Close) - Low",
+            "BodyRatio": "BodySize / TotalRange",
+            "UpperWickRatio": "UpperWick / TotalRange",
+            "LowerWickRatio": "LowerWick / TotalRange",
+            "BodyCenter": "(Open + Close) / 2",
+            "BodyMidpointRatio": "(BodyCenter - Low) / TotalRange",
+            "CandleSlope": "atan2(Close - Open, 1) in degrees — angle of the candle body",
+            "EngulfArea": "BodySize[i] vs BodySize[i-1]; engulf if BodySize[i] > BodySize[i-1] * 1.0"
+        },
+        "pattern_rules": {
+            "Doji": {
+                "condition": "BodyRatio < 0.05",
+                "signal": "Geometric indecision — open and close nearly identical; potential reversal pivot"
+            },
+            "Pin_Bar_Bullish": {
+                "condition": "LowerWickRatio > 0.60 AND BodyRatio < 0.30 AND UpperWickRatio < 0.10",
+                "signal": "Price rejected geometrically from low — buy signal at PRZ"
+            },
+            "Pin_Bar_Bearish": {
+                "condition": "UpperWickRatio > 0.60 AND BodyRatio < 0.30 AND LowerWickRatio < 0.10",
+                "signal": "Price rejected geometrically from high — sell signal at PRZ"
+            },
+            "Bullish_Engulf": {
+                "condition": "Close[i] > Open[i] AND Open[i] < Close[i-1] AND Close[i] > Open[i-1] AND BodyRatio[i] > 0.55",
+                "signal": "Geometrically dominant bullish body absorbs prior bearish body"
+            },
+            "Bearish_Engulf": {
+                "condition": "Close[i] < Open[i] AND Open[i] > Close[i-1] AND Close[i] < Open[i-1] AND BodyRatio[i] > 0.55",
+                "signal": "Geometrically dominant bearish body absorbs prior bullish body"
+            },
+            "Inside_Bar": {
+                "condition": "High[i] < High[i-1] AND Low[i] > Low[i-1]",
+                "signal": "Price compressing within prior candle's geometric range — breakout imminent"
+            },
+            "Outside_Bar": {
+                "condition": "High[i] > High[i-1] AND Low[i] < Low[i-1]",
+                "signal": "Engulfing the prior bar's full geometric range — expansion candle"
+            },
+            "Marubozu_Bullish": {
+                "condition": "BodyRatio > 0.92 AND UpperWickRatio < 0.04 AND LowerWickRatio < 0.04 AND Close > Open",
+                "signal": "Maximum geometric bullish momentum — almost pure body, minimal wicks"
+            },
+            "Marubozu_Bearish": {
+                "condition": "BodyRatio > 0.92 AND UpperWickRatio < 0.04 AND LowerWickRatio < 0.04 AND Close < Open",
+                "signal": "Maximum geometric bearish momentum"
+            },
+            "Three_Bar_Reversal": {
+                "condition": "Three consecutive candles where slope alternates: down-down-up (bullish) or up-up-down (bearish). Measured by CandleSlope angle.",
+                "signal": "Geometric turn in three-candle momentum vector"
+            }
+        },
+        "display_requirements": {
+            "visual_panel": "Draw a dedicated sub-window on the chart showing: BodyRatio, UpperWickRatio, LowerWickRatio as horizontal bar gauges. Display pattern name detected. Color code: green for bullish signal, red for bearish, gray for neutral.",
+            "chart_labels": "Draw an ObjectCreate arrow or label on the chart at each detected candlestick pattern, named with pattern type and geometric score.",
+            "dashboard_panel": "Top-left corner HUD showing: current pattern | body ratio | wick ratios | confluence score | PRZ zone level | active signal direction | SL | TP"
+        }
+    },
+    "confluence_scoring_system": {
+        "description": "Aggregate all geometric signals into a single Confluence Score (0–100). Trade only when score ≥ threshold.",
+        "scoring_weights": {
+            "Fibonacci_cluster_density": {
+                "max_points": 20,
+                "rule": "4+ levels overlapping = 20 pts; 3 = 15; 2 = 10; 1 = 5"
+            },
+            "Harmonic_pattern_match": {
+                "max_points": 25,
+                "rule": "Pattern quality score < 0.05 = 25 pts; < 0.10 = 18; < 0.15 = 10"
+            },
+            "Gann_angle_support": {
+                "max_points": 15,
+                "rule": "Price at 1x1 line ±3pts = 15; at 2x1 = 10; at 1x2 = 8"
+            },
+            "Vector_momentum_alignment": {
+                "max_points": 15,
+                "rule": "Dot product positive + φ-ratio velocity = 15; one = 8"
+            },
+            "Fractal_TF_alignment": {
+                "max_points": 10,
+                "rule": "3 TF fractal match = 10; 2 = 6; 1 = 3"
+            },
+            "Candlestick_geometry_match": {
+                "max_points": 10,
+                "rule": "Pin bar or engulf at PRZ = 10; Doji at PRZ = 7; inside bar = 5"
+            },
+            "Linear_regression_σ_band": {
+                "max_points": 5,
+                "rule": "At ±2σ = 5; at ±1σ = 3"
+            }
+        },
+        "entry_threshold": 65,
+        "strong_signal_threshold": 80,
+        "direction_rule": "All active geometric signals must agree on direction. Any conflict between Fibonacci and Gann direction = reduce score by 20 pts."
+    },
+    "trade_execution": {
+        "entry": {
+            "trigger": "Confluence score ≥ threshold AND current M1 candle closes with confirming candlestick geometry pattern",
+            "order_type": "Market order (ORDER_TYPE_BUY or ORDER_TYPE_SELL)",
+            "max_spread_allowed_points": 35,
+            "slippage_points": "InpMaxSlippage"
+        },
+        "stop_loss": {
+            "method": "Geometric SL",
+            "rule": "SL = nearest Gann angle line beyond entry point, OR the most recent fractal pivot beyond the PRZ, whichever is closer. Minimum SL = 80 points for XAUUSD.",
+            "formula": "SL_price = EntryPrice ± (SL_distance_points * SymbolPoint)"
+        },
+        "take_profit": {
+            "method": "Multi-target geometric projection",
+            "TP1": "0.618 × leg magnitude projected from entry — partial close 50%",
+            "TP2": "1.000 × previous leg magnitude — partial close 30%",
+            "TP3": "1.618 × (φ extension) from entry — final 20% or trail",
+            "trailing_stop": {
+                "method": "Geometric trail — move SL to the next Gann angle level behind price as it advances",
+                "activation": "After TP1 hit"
+            }
+        },
+        "position_management": {
+            "max_concurrent_trades": 2,
+            "max_daily_loss_percent": 3.0,
+            "break_even_rule": "Move SL to entry + 5 points when price moves 40 points in favor",
+            "no_trade_zones": "Avoid entries within 15 minutes of major news (implement via NewsFilter flag)"
+        }
+    },
+    "scalper_specific_settings": {
+        "preferred_session": "London open (07:00–10:00 GMT) and New York open (13:00–16:00 GMT) — highest geometric pattern completion rate for XAUUSD",
+        "target_pips_per_trade": "15–40 points scalp (XAUUSD 0.01 point = 1 cent per 0.01 lot)",
+        "max_trade_duration_minutes": 30,
+        "tick_geometry": {
+            "description": "On M1, analyze last 20 bars for micro-harmonic completion. The same XABCD rules apply at tick-level resolution.",
+            "micro_Fibonacci": "Apply 0.382 and 0.618 retracements on M1 swings for precision entry within PRZ"
+        }
+    },
+    "visualization_requirements": {
+        "chart_objects": [
+            "Draw all active Fibonacci retracement levels as horizontal lines with labels",
+            "Draw Gann fan lines from last swing pivot on M15 and H1 charts",
+            "Shade the PRZ (Potential Reversal Zone) as a rectangle on chart",
+            "Draw the linear regression channel with σ1 and σ2 bands",
+            "Mark detected harmonic XABCD pattern points with labeled arrows",
+            "Mark fractal pivots with triangles (up = swing high, down = swing low)",
+            "Draw Gann arc circles from significant pivots",
+            "Annotate each detected candlestick pattern with its name and geometric ratios"
+        ],
+        "info_panel_hud": {
+            "location": "Top-left chart corner using ObjectCreate with OBJ_LABEL",
+            "fields": [
+                "Symbol | Spread | Leverage",
+                "Balance | Equity | Free Margin",
+                "Lot size | Risk % | Max Slippage",
+                "Confluence Score: XX/100",
+                "Active Signal: LONG / SHORT / NONE",
+                "PRZ Level: XXXX.XX",
+                "SL: XXXX.XX | TP1: XXXX.XX | TP2: XXXX.XX | TP3: XXXX.XX",
+                "Last Pattern: [pattern name] | Body Ratio: X.XX | Wick Ratio: X.XX",
+                "Gann Angle: 1x1 at XXXX.XX",
+                "Fib Zone: XXXX.XX–XXXX.XX",
+                "Fractal TF Alignment: M5 M15 H1"
+            ]
+        }
+    },
+    "mql5_structure": {
+        "inputs": [
+            "int    InpSwingLookback       = 5",
+            "int    InpLRBars              = 50",
+            "double InpRiskPercent         = 1.0",
+            "double InpFixedLot            = 0.01",
+            "bool   InpUseDynamicLot       = true",
+            "int    InpMaxSlippage         = 20",
+            "double InpMinConflScore       = 65.0",
+            "double InpHarmonicTolerance   = 0.05",
+            "double InpGannPriceUnit       = 0.10",
+            "int    InpMaxTrades           = 2",
+            "double InpMaxDailyLossPct     = 3.0",
+            "bool   InpShowHUD             = true",
+            "bool   InpDrawGannFan         = true",
+            "bool   InpDrawFibLevels       = true",
+            "bool   InpDrawHarmonicZone    = true",
+            "color  InpBullishColor        = clrDodgerBlue",
+            "color  InpBearishColor        = clrOrangeRed",
+            "color  InpNeutralColor        = clrDarkGray"
+        ],
+        "core_functions": [
+            "OnInit()           — validate symbol, load account data, initialize geometry engines",
+            "OnTick()           — gate by new bar, run all geometry engines, compute confluence, execute if threshold met",
+            "OnDeinit()         — clean up chart objects",
+            "DetectSwings()     — fractal pivot scanner, all timeframes",
+            "RunFibEngine()     — retracements, extensions, clusters",
+            "RunHarmonicEngine()— XABCD scanner, ratio validator, PRZ builder",
+            "RunGannEngine()    — angle lines, Square of 9, fan, time cycles",
+            "RunVectorEngine()  — leg vectors, dot product, LR channel",
+            "RunFractalEngine() — self-similarity score, Hausdorff proxy",
+            "AnalyzeCandleGeometry() — all ratio computations, pattern detection, chart labeling",
+            "ComputeConfluence()     — weighted sum, direction consensus check",
+            "CalculateLot()          — dynamic lot via risk formula",
+            "PlaceOrder()            — OrderSend with SL/TP from geometry",
+            "ManagePositions()       — break-even, partial closes, geometric trail",
+            "DrawHUD()               — info panel refresh every tick",
+            "DrawChartObjects()      — Fibonacci lines, Gann fans, PRZ rectangle, harmonic labels"
+        ]
+    },
+    "mathematical_constants": {
+        "phi": 1.6180339887,
+        "phi_inv": 0.6180339887,
+        "sqrt2": 1.4142135623,
+        "sqrt3": 1.7320508075,
+        "sqrt5": 2.2360679774,
+        "pi": 3.1415926535,
+        "e": 2.7182818284,
+        "ln_phi": 0.4812118250
+    },
+    "error_handling": {
+        "spread_too_wide": "If spread > InpMaxSpread, skip entry and log to journal",
+        "insufficient_margin": "Check free margin before order; skip if lot would exceed 80% of free margin",
+        "pattern_conflict": "If bullish and bearish harmonic found simultaneously, do not trade; log conflict",
+        "geometry_undefined": "If fewer than 3 fractal pivots detected on any TF, mark that engine as inactive for this tick"
+    },
+    "notes": {
+        "broker_symbol_warning": "Symbol may be GOLD, XAUUSD, GOLD.i#, or XAUUSDm depending on broker. Add symbol normalization at OnInit().",
+        "decimal_precision": "XAUUSD uses 2 decimal places (0.01 point). Always use NormalizeDouble(price, _Digits).",
+        "backtest_recommendation": "Optimize InpSwingLookback (3–8), InpLRBars (30–80), InpMinConflScore (55–80) via MT5 Strategy Tester on M1 data, 2022–2024.",
+        "execution_speed": "Scalper EA requires ECN/STP broker with raw spreads < 20 points on XAUUSD during active sessions."
+    }
+}
