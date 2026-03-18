@@ -599,8 +599,8 @@ void ExecuteTrade()
     tp_points = sl_points * PHI; // Golden ratio risk/reward
     
     double lot = CalculateLot(sl_points);
-    if(lot < sym.VolumeMin()) lot = sym.VolumeMin();
-    if(lot > sym.VolumeMax()) lot = sym.VolumeMax();
+    if(lot < sym.LotsMin()) lot = sym.LotsMin();
+    if(lot > sym.LotsMax()) lot = sym.LotsMax();
     lot = NormalizeDouble(lot, 2);
     
     double sl = 0.0, tp1 = 0.0;
